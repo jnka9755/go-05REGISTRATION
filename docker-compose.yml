@@ -1,0 +1,15 @@
+version: "3.5"
+services:
+  go-registration-ms:
+    platform: linux/amd64
+    container_name: go-registration-ms
+    build:
+      context: ./.docker
+      dockerfile: Dockerfile
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: go-registration
+    ports:
+      - "3323:3306"
+    volumes:
+      - ./.dockers/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
