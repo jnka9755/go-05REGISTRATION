@@ -23,12 +23,17 @@ func main() {
 		log.Fatal(err)
 	}
 
+	pagLimDef := os.Getenv("PAGINATOR_LIMIT_DEFAULT")
+	if pagLimDef == "" {
+		log.Fatal("paginator limit defauly is required")
+	}
+
 	ctx := context.Background()
 
 	registrationRepository := registration.NewRepository(log, db)
 	registrationBusiness := registration.NewBusiness(log, registrationRepository)
 
-	handler := handler.NewCourseHTTPServer(ctx, registration.MakeEndpoints(registrationBusiness))
+	handler := handler.NewCourseHTTPServer(ctx, registration.MakeEndpoints(registrationBusiness, registration.Config{LimPageDef: pagLimDef}))
 
 	port := os.Getenv("PORT")
 	address := fmt.Sprintf("127.0.0.1:%s", port)
