@@ -7,6 +7,9 @@ import (
 
 	"github.com/jnka9755/go-05META/meta"
 	"github.com/jnka9755/go-05RESPONSE/response"
+
+	sdkCourse "github.com/jnka9755/go-05SDKCOURSE/course"
+	sdkUser "github.com/jnka9755/go-05SDKUSER/user"
 )
 
 type (
@@ -66,6 +69,10 @@ func makeCreateEndpoint(b Business) Controller {
 		responseRegister, err := b.Create(ctx, &req)
 
 		if err != nil {
+			if errors.As(err, &sdkUser.ErrNotFound{}) ||
+				errors.As(err, &sdkCourse.ErrNotFound{}) {
+				return nil, response.NotFound(err.Error())
+			}
 			return nil, response.InternalServerError(err.Error())
 		}
 
@@ -119,6 +126,10 @@ func makeUpdateEndpoint(b Business) Controller {
 		if err := b.Update(ctx, &req); err != nil {
 			if errors.As(err, &ErrNotFound{}) {
 				return nil, response.NotFound(err.Error())
+			}
+
+			if errors.As(err, &ErrInvalidStatus{}) {
+				return nil, response.BadRequest(err.Error())
 			}
 
 			return nil, response.InternalServerError(err.Error())

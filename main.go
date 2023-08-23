@@ -11,6 +11,9 @@ import (
 	"github.com/jnka9755/go-05REGISTRATION/package/bootstrap"
 	"github.com/jnka9755/go-05REGISTRATION/package/handler"
 	"github.com/joho/godotenv"
+
+	sdkCourse "github.com/jnka9755/go-05SDKCOURSE/course"
+	sdkUser "github.com/jnka9755/go-05SDKUSER/user"
 )
 
 func main() {
@@ -28,10 +31,13 @@ func main() {
 		log.Fatal("paginator limit defauly is required")
 	}
 
+	transUser := sdkUser.NewHttpClient(os.Getenv("API_USER_URL"), os.Getenv("API_USER_TOKEN"))
+	transCourse := sdkCourse.NewHttpClient(os.Getenv("API_COURSE_URL"), "")
+
 	ctx := context.Background()
 
 	registrationRepository := registration.NewRepository(log, db)
-	registrationBusiness := registration.NewBusiness(log, registrationRepository)
+	registrationBusiness := registration.NewBusiness(log, registrationRepository, transUser, transCourse)
 
 	handler := handler.NewCourseHTTPServer(ctx, registration.MakeEndpoints(registrationBusiness, registration.Config{LimPageDef: pagLimDef}))
 

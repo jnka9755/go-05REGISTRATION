@@ -5,6 +5,9 @@ import (
 	"log"
 
 	"github.com/jnka9755/go-05DOMAIN/domain"
+
+	sdkCourse "github.com/jnka9755/go-05SDKCOURSE/course"
+	sdkUser "github.com/jnka9755/go-05SDKUSER/user"
 )
 
 type (
@@ -16,8 +19,10 @@ type (
 	}
 
 	business struct {
-		log        *log.Logger
-		repository Repository
+		log         *log.Logger
+		repository  Repository
+		transUser   sdkUser.Transport
+		transCourse sdkCourse.Transport
 	}
 
 	Filters struct {
@@ -31,10 +36,12 @@ type (
 	}
 )
 
-func NewBusiness(log *log.Logger, repository Repository) Business {
+func NewBusiness(log *log.Logger, repository Repository, transUser sdkUser.Transport, transCourse sdkCourse.Transport) Business {
 	return &business{
-		log:        log,
-		repository: repository,
+		log:         log,
+		repository:  repository,
+		transUser:   transUser,
+		transCourse: transCourse,
 	}
 }
 
@@ -43,7 +50,15 @@ func (b business) Create(ctx context.Context, request *CreateReq) (*domain.Regis
 	register := domain.Registration{
 		UserID:   request.UserID,
 		CourseID: request.CourseID,
-		Status:   "P",
+		Status:   domain.Pending,
+	}
+
+	if _, err := b.transUser.Get(request.UserID); err != nil {
+		return nil, err
+	}
+
+	if _, err := b.transCourse.Get(request.CourseID); err != nil {
+		return nil, err
 	}
 
 	if err := b.repository.Create(ctx, &register); err != nil {
@@ -65,6 +80,14 @@ func (b business) GetAll(ctx context.Context, filters Filters, offset, limit int
 }
 
 func (b business) Update(ctx context.Context, request *UpdateReq) error {
+
+	if request.Status != nil {
+		switch domain.EnrollStatus(*request.Status) {
+		case domain.Pending, domain.Active, domain.Studying, domain.Inactive:
+		default:
+			return ErrInvalidStatus{*request.Status}
+		}
+	}
 
 	registerUpdate := UpdateRegister{
 		ID:     request.ID,
